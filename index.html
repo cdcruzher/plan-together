@@ -23,7 +23,7 @@
     <div id="loading-view" class="fixed inset-0 bg-blue-50 flex items-center justify-center z-50">
         <div id="loading-content" class="text-center">
             <div class="text-indigo-600 font-semibold animate-pulse text-xl">Cargando ViajeJuntos...</div>
-            <p class="text-sm text-gray-400 mt-2">Si esto tarda mucho, verifica la configuración.</p>
+            <p class="text-sm text-gray-400 mt-2">Iniciando aplicación...</p>
         </div>
     </div>
 
@@ -35,7 +35,11 @@
                     <svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
                 </div>
                 <h1 class="text-3xl font-bold text-gray-800">ViajeJuntos</h1>
-                <p class="text-gray-500 mt-2">Planifica tu próxima aventura con amigos en tiempo real.</p>
+                <p class="text-gray-500 mt-2">Planifica tu próxima aventura.</p>
+                <!-- Indicador de estado -->
+                <div id="connection-status" class="mt-2 inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                    <span class="w-2 h-2 rounded-full bg-gray-400"></span> Verificando conexión...
+                </div>
             </div>
 
             <div class="space-y-4">
@@ -46,24 +50,24 @@
                 </div>
 
                 <div>
-                    <label id="home-label" class="block text-sm font-medium text-gray-700 mb-1">Ingresa el Código del Viaje</label>
+                    <label id="home-label" class="block text-sm font-medium text-gray-700 mb-1">Nombre del Viaje / Código</label>
                     <input type="text" id="trip-id-input" placeholder="ej. eurotrip-2025" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
                 </div>
                 
                 <button id="btn-join-create" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg transition transform hover:scale-[1.02]">
-                    Unirse al Itinerario
+                    Comenzar / Crear Viaje
                 </button>
 
                 <div class="text-center mt-4">
-                    <button id="btn-toggle-mode" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
-                        ¿No tienes código? Crea uno nuevo
-                    </button>
+                    <p class="text-xs text-gray-400">
+                        Si estás en modo Offline, recuerda guardar (descargar) tu archivo .json antes de salir.
+                    </p>
                 </div>
 
                 <!-- Sección Subir Archivo en Home -->
                 <div class="relative mt-8 pt-6 border-t border-gray-100">
                     <div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-2 text-xs text-gray-400 whitespace-nowrap">
-                        O RESTAURA UNA COPIA
+                        O CARGA UN JSON EXISTENTE
                     </div>
                     <div class="flex justify-center">
                         <label class="cursor-pointer flex items-center gap-2 px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-lg border border-gray-200 transition text-sm font-medium">
@@ -104,7 +108,7 @@
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
                         <input type="file" id="file-import-app" accept=".json" class="hidden">
                     </label>
-                    <button id="btn-export" class="p-2 text-gray-600 hover:bg-gray-100 rounded-full" title="Guardar Archivo">
+                    <button id="btn-export" class="p-2 text-gray-600 hover:bg-gray-100 rounded-full" title="Guardar Archivo (Importante en modo Offline)">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
                     </button>
                     <button id="btn-logout" class="p-2 text-red-500 hover:bg-red-50 rounded-full" title="Salir">
@@ -216,7 +220,7 @@
                         <div class="flex justify-end gap-3 pt-2">
                             <button type="button" id="btn-cancel-form" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition">Cancelar</button>
                             <button type="submit" id="btn-submit-form" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium shadow-md transition flex items-center gap-2">
-                                Guardar
+                                Guardar (Memoria)
                             </button>
                         </div>
                     </form>
@@ -237,12 +241,10 @@
         import { getFirestore, doc, onSnapshot, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
         // =========================================================================
-        // CONFIGURACIÓN DE FIREBASE (¡EDITA ESTO SI DESCARGAS EL ARCHIVO!)
+        // CONFIGURACIÓN DE FIREBASE
         // =========================================================================
-        // Si usas esto fuera del editor de IA, DEBES crear un proyecto en 
-        // https://console.firebase.google.com/ y pegar tus datos aquí abajo:
         const manualConfig = {
-            apiKey: "TU_API_KEY_AQUI",
+            apiKey: "TU_API_KEY_AQUI", // Deja esto como está para probar el modo Offline
             authDomain: "TU_PROYECTO.firebaseapp.com",
             projectId: "TU_PROYECTO_ID",
             storageBucket: "TU_PROYECTO.firebasestorage.app",
@@ -250,80 +252,17 @@
             appId: "TU_APP_ID"
         };
 
-        // --- Lógica de Inicialización Segura ---
-        let firebaseConfig;
-        let appId;
-
-        try {
-            // Intenta cargar la config automática del entorno de IA
-            if (typeof __firebase_config !== 'undefined' && __firebase_config) {
-                firebaseConfig = JSON.parse(__firebase_config);
-                appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            } else {
-                // Si no hay config automática, usa la manual
-                firebaseConfig = manualConfig;
-                appId = 'viaje-juntos-local'; // ID genérico para uso local
-            }
-        } catch (e) {
-            console.error("Error al cargar configuración", e);
-        }
-
-        // --- Verificación y Arranque ---
-        const startApp = () => {
-            const loadingContent = document.getElementById('loading-content');
-            
-            // Si la config sigue siendo la de "ejemplo" o está vacía, mostramos error
-            if (!firebaseConfig || !firebaseConfig.apiKey || firebaseConfig.apiKey === "TU_API_KEY_AQUI") {
-                loadingContent.innerHTML = `
-                    <div class="bg-white p-6 rounded-xl shadow-2xl max-w-lg mx-auto text-left">
-                        <div class="flex items-center gap-3 text-red-600 mb-4">
-                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                            <h2 class="text-xl font-bold">Falta Configuración</h2>
-                        </div>
-                        <p class="text-gray-700 mb-4">Para usar esta App fuera del editor, necesitas conectar tu propia base de datos Firebase.</p>
-                        <ol class="list-decimal pl-5 space-y-2 text-sm text-gray-600 mb-4">
-                            <li>Ve a <a href="https://console.firebase.google.com/" target="_blank" class="text-indigo-600 underline font-semibold">Firebase Console</a> y crea un proyecto gratis.</li>
-                            <li>Agrega una "Web App" a tu proyecto.</li>
-                            <li>Copia las claves (apiKey, projectId, etc).</li>
-                            <li>Abre este archivo <code>index.html</code> con un editor de texto (Notepad, VS Code).</li>
-                            <li>Busca la sección <code>const manualConfig</code> (cerca de la línea 320) y pega tus datos.</li>
-                        </ol>
-                        <button onclick="location.reload()" class="w-full bg-indigo-600 text-white py-2 rounded-lg font-bold hover:bg-indigo-700">Ya lo edité, Recargar</button>
-                    </div>
-                `;
-                return null;
-            }
-
-            try {
-                const app = initializeApp(firebaseConfig);
-                const auth = getAuth(app);
-                const db = getFirestore(app);
-                return { app, auth, db };
-            } catch (err) {
-                console.error("Error inicializando Firebase:", err);
-                loadingContent.innerHTML = `<p class="text-red-500 bg-white p-4 rounded shadow">Error inicializando Firebase: ${err.message}</p>`;
-                return null;
-            }
-        };
-
-        const fb = startApp();
-
-        // Si falló la inicialización, detenemos el script aquí
-        if (!fb) throw new Error("App detenida por falta de configuración.");
-        
-        const { auth, db } = fb;
-
-
         // --- Estado Global ---
         let state = {
             user: null,
-            username: "", // Guardamos el nombre aquí
+            username: "",
             activeTripId: null,
+            isOffline: false, // Bandera para modo offline
             tripData: { 
                 name: "Mi Viaje", 
                 events: [], 
                 lastUpdated: 0,
-                lastUpdatedBy: null // { uid: string, username: string, date: number }
+                lastUpdatedBy: null 
             },
             selectedDate: new Date().toISOString().split('T')[0],
             isJoinMode: true,
@@ -341,13 +280,14 @@
             homeLabel: document.getElementById('home-label'),
             tripInput: document.getElementById('trip-id-input'),
             btnJoinCreate: document.getElementById('btn-join-create'),
-            btnToggleMode: document.getElementById('btn-toggle-mode'),
+            // btnToggleMode eliminado ya que en offline todo es "crear/cargar"
             fileImportHome: document.getElementById('file-import-home'),
             
             tripTitle: document.getElementById('trip-title'),
             displayTripCode: document.getElementById('display-trip-code'),
             metaInfo: document.getElementById('meta-info'),
             metaInfoMobile: document.getElementById('meta-info-mobile'),
+            connectionStatus: document.getElementById('connection-status'),
             
             fileImportApp: document.getElementById('file-import-app'),
             btnExport: document.getElementById('btn-export'),
@@ -375,6 +315,76 @@
             toastMsg: document.getElementById('toast-message')
         };
 
+        // --- Lógica de Inicialización ---
+        let fb = null;
+        let firebaseConfig = null;
+        let appId = 'viaje-local';
+
+        // Intentar obtener config de IA o Manual
+        if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+            try {
+                firebaseConfig = JSON.parse(__firebase_config);
+                appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            } catch (e) {}
+        } else {
+            firebaseConfig = manualConfig;
+        }
+
+        const initSystem = async () => {
+            // Verificar si tenemos config válida
+            const hasValidConfig = firebaseConfig && firebaseConfig.apiKey && firebaseConfig.apiKey !== "TU_API_KEY_AQUI";
+
+            if (hasValidConfig) {
+                try {
+                    const app = initializeApp(firebaseConfig);
+                    const auth = getAuth(app);
+                    const db = getFirestore(app);
+                    fb = { auth, db };
+                    
+                    // Iniciar Auth Firebase
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                    
+                    // Listener de Auth real
+                    onAuthStateChanged(auth, (u) => {
+                        state.user = u;
+                        state.isOffline = false;
+                        updateConnectionUI(true);
+                        views.loading.classList.add('hidden');
+                        if (u) switchView('home');
+                    });
+                } catch (err) {
+                    console.error("Fallo conexión Firebase, pasando a modo Offline", err);
+                    activateOfflineMode();
+                }
+            } else {
+                console.log("No hay config Firebase, iniciando modo Offline");
+                activateOfflineMode();
+            }
+        };
+
+        const activateOfflineMode = () => {
+            state.isOffline = true;
+            // Usuario Falso para modo offline
+            state.user = { uid: 'offline-user-' + Math.floor(Math.random()*1000) };
+            updateConnectionUI(false);
+            views.loading.classList.add('hidden');
+            switchView('home');
+        };
+
+        const updateConnectionUI = (isOnline) => {
+            if (isOnline) {
+                els.connectionStatus.innerHTML = `<span class="w-2 h-2 rounded-full bg-green-500"></span> Conectado a Nube`;
+                els.connectionStatus.className = "mt-2 inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700";
+            } else {
+                els.connectionStatus.innerHTML = `<span class="w-2 h-2 rounded-full bg-orange-400"></span> Modo Local (Offline)`;
+                els.connectionStatus.className = "mt-2 inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-orange-50 text-orange-700 border border-orange-100";
+            }
+        };
+
         // --- Utilidades ---
         const showToast = (msg) => {
             els.toastMsg.textContent = msg;
@@ -395,10 +405,9 @@
         };
 
         const formatMetaInfo = (meta) => {
-            if (!meta || !meta.date) return '';
+            if (!meta || !meta.date) return 'Sin datos de edición';
             const date = new Date(meta.date);
-            // Usar nombre si existe, sino fallback a ID
-            const userStr = meta.username ? meta.username : (meta.uid ? `Usuario ${meta.uid.slice(0, 5)}` : 'Desconocido');
+            const userStr = meta.username ? meta.username : (meta.uid ? (meta.uid.startsWith('offline') ? 'Usuario Local' : `Usuario ${meta.uid.slice(0, 5)}`) : 'Desconocido');
             return `Editado por ${userStr} el ${date.toLocaleDateString()} a las ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
         };
 
@@ -413,7 +422,7 @@
              els.formNewEvent.querySelector('[name="time"]').value = "09:00"; // Default
              state.editingEventId = null;
              els.formTitle.textContent = "Nueva Actividad";
-             els.btnSubmitForm.textContent = "Guardar";
+             els.btnSubmitForm.textContent = "Guardar" + (state.isOffline ? " (Memoria)" : "");
              els.addEventForm.classList.add('hidden');
              els.btnShowAddForm.classList.remove('hidden');
         };
@@ -428,7 +437,7 @@
             form.querySelector('[name="notes"]').value = event.notes || "";
             
             els.formTitle.textContent = "Editar Actividad";
-            els.btnSubmitForm.textContent = "Actualizar";
+            els.btnSubmitForm.textContent = "Actualizar" + (state.isOffline ? " (Memoria)" : "");
             
             els.btnShowAddForm.classList.add('hidden');
             els.addEventForm.classList.remove('hidden');
@@ -438,7 +447,7 @@
         const render = () => {
             // Actualizar inputs de control
             els.datePicker.value = state.selectedDate;
-            els.displayTripCode.textContent = state.activeTripId || '';
+            els.displayTripCode.textContent = state.activeTripId || 'Local';
             els.tripTitle.textContent = state.tripData.name;
             
             // Meta Info
@@ -489,21 +498,17 @@
                 `;
             } else {
                 dayEvents.forEach(event => {
-                    // Links
+                    // Links & Display logic (igual que antes)
                     const startDT = event.date.replace(/-/g, '') + 'T' + event.time.replace(/:/g, '') + '00';
                     let endDT;
-                    
                     if (event.endTime) {
                         endDT = event.date.replace(/-/g, '') + 'T' + event.endTime.replace(/:/g, '') + '00';
                     } else {
                         const hourNum = parseInt(event.time.split(':')[0]);
                         endDT = event.date.replace(/-/g, '') + 'T' + (hourNum + 1).toString().padStart(2,'0') + event.time.split(':')[1] + '00';
                     }
-
                     const calLink = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${startDT}/${endDT}&details=${encodeURIComponent(event.notes || '')}&location=${encodeURIComponent(event.location)}`;
                     const mapLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}`;
-
-                    // Time display logic
                     const timeDisplay = event.endTime ? `${event.time} - ${event.endTime}` : event.time;
 
                     const el = document.createElement('div');
@@ -545,51 +550,52 @@
                     els.eventsContainer.appendChild(el);
                 });
 
-                // Attach Listeners
-                document.querySelectorAll('.btn-delete').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        deleteEvent(e.currentTarget.getAttribute('data-id'));
-                    });
-                });
-                document.querySelectorAll('.btn-edit').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        const id = e.currentTarget.getAttribute('data-id');
-                        const event = state.tripData.events.find(ev => ev.id === id);
-                        if (event) openEditForm(event);
-                    });
-                });
+                document.querySelectorAll('.btn-delete').forEach(btn => btn.addEventListener('click', (e) => deleteEvent(e.currentTarget.getAttribute('data-id'))));
+                document.querySelectorAll('.btn-edit').forEach(btn => btn.addEventListener('click', (e) => {
+                    const event = state.tripData.events.find(ev => ev.id === e.currentTarget.getAttribute('data-id'));
+                    if (event) openEditForm(event);
+                }));
             }
         };
 
-        // --- Operaciones de Datos ---
+        // --- Operaciones de Datos (Híbrido) ---
+        
         const startListening = () => {
+            if (state.isOffline) {
+                // Modo Offline: Simplemente renderizar lo que hay en memoria
+                // Si es un "Nuevo Viaje", inicializar vacío si no hay datos
+                if (!state.tripData.name || state.tripData.name === "Mi Viaje") {
+                    state.tripData = { 
+                        name: "Nuevo Viaje Local", 
+                        events: [], 
+                        lastUpdated: Date.now(),
+                        lastUpdatedBy: { uid: state.user.uid, username: state.username, date: Date.now() }
+                    };
+                }
+                render();
+                return;
+            }
+
+            // Modo Online: Firebase listener
             if (!state.activeTripId) return;
-            const tripRef = doc(db, 'artifacts', appId, 'public', 'data', 'trips', state.activeTripId);
+            const tripRef = doc(fb.db, 'artifacts', appId, 'public', 'data', 'trips', state.activeTripId);
             
             onSnapshot(tripRef, (snapshot) => {
                 if (snapshot.exists()) {
                     const data = snapshot.data();
                     state.tripData = data;
-                    
-                    // Auto-seleccionar primer fecha si la actual está vacía y hay eventos
                     const dates = [...new Set(data.events.map(e => e.date))].sort();
                     const currentHasEvents = data.events.some(e => e.date === state.selectedDate);
-                    
                     if (!currentHasEvents && dates.length > 0 && !dates.includes(state.selectedDate)) {
                         state.selectedDate = dates[0];
                     }
                 } else {
-                    // Create new
                     const now = Date.now();
                     const initialData = { 
                         name: "Nuevo Viaje", 
                         events: [], 
                         lastUpdated: now,
-                        lastUpdatedBy: { 
-                            uid: state.user.uid, 
-                            username: state.username, 
-                            date: now 
-                        }
+                        lastUpdatedBy: { uid: state.user.uid, username: state.username, date: now }
                     };
                     setDoc(tripRef, initialData);
                     state.tripData = initialData;
@@ -599,40 +605,39 @@
         };
 
         const updateTripMetadata = async (newEvents) => {
-            const tripRef = doc(db, 'artifacts', appId, 'public', 'data', 'trips', state.activeTripId);
             const now = Date.now();
-            await updateDoc(tripRef, { 
-                events: newEvents, 
-                lastUpdated: now,
-                lastUpdatedBy: { 
-                    uid: state.user.uid, 
-                    username: state.username || "Anónimo", // Incluir nombre
-                    date: now 
-                }
-            });
+            const meta = { 
+                uid: state.user.uid, 
+                username: state.username || "Anónimo", 
+                date: now 
+            };
+            
+            // Actualizar estado local (siempre necesario para render instantáneo)
+            state.tripData.events = newEvents;
+            state.tripData.lastUpdated = now;
+            state.tripData.lastUpdatedBy = meta;
+
+            if (state.isOffline) {
+                render();
+                return;
+            }
+
+            // Si Online, guardar en DB
+            const tripRef = doc(fb.db, 'artifacts', appId, 'public', 'data', 'trips', state.activeTripId);
+            await updateDoc(tripRef, { events: newEvents, lastUpdated: now, lastUpdatedBy: meta });
         };
 
         const saveEvent = async (eventData) => {
             let updatedEvents;
-            
             if (state.editingEventId) {
-                // Modo Edición
                 updatedEvents = state.tripData.events.map(ev => {
                     if (ev.id === state.editingEventId) {
-                        return {
-                            ...ev,
-                            time: eventData.time,
-                            endTime: eventData.endTime, // Save end time
-                            title: eventData.title,
-                            location: eventData.location,
-                            notes: eventData.notes
-                        };
+                        return { ...ev, ...eventData };
                     }
                     return ev;
                 });
-                showToast("Actividad actualizada");
+                showToast("Actividad actualizada " + (state.isOffline ? "(Local)" : ""));
             } else {
-                // Modo Creación
                 const newEvent = {
                     id: crypto.randomUUID(),
                     date: state.selectedDate,
@@ -640,9 +645,8 @@
                     addedBy: state.user.uid
                 };
                 updatedEvents = [...state.tripData.events, newEvent];
-                showToast("Actividad agregada");
+                showToast("Actividad agregada " + (state.isOffline ? "(Local)" : ""));
             }
-
             await updateTripMetadata(updatedEvents);
             resetForm();
         };
@@ -657,12 +661,11 @@
         const handleImport = (file, isHome = false) => {
             if (!file) return;
 
-            // Validación de Nombre en Home
             if (isHome) {
                 const username = els.usernameInput.value.trim();
                 if (!username) {
-                    alert("Por favor ingresa tu nombre antes de restaurar un archivo.");
-                    els.fileImportHome.value = ''; // Resetear input
+                    alert("Por favor ingresa tu nombre antes de cargar un archivo.");
+                    els.fileImportHome.value = ''; 
                     els.usernameInput.focus();
                     return;
                 }
@@ -674,37 +677,49 @@
                 try {
                     const json = JSON.parse(e.target.result);
                     if (json.events && Array.isArray(json.events)) {
-                        let targetId = state.activeTripId;
                         
-                        if (!targetId) {
-                            if (els.tripInput.value.trim()) {
-                                targetId = els.tripInput.value.trim().replace(/[^a-zA-Z0-9-_]/g, '');
-                            } else {
-                                targetId = `importado-${Math.floor(Math.random() * 10000)}`;
-                            }
-                        }
-
-                        const tripRef = doc(db, 'artifacts', appId, 'public', 'data', 'trips', targetId);
+                        // Lógica de importación
                         const now = Date.now();
+                        const meta = { 
+                            uid: state.user.uid, 
+                            username: state.username || "Usuario Importador", 
+                            date: now 
+                        };
                         
-                        // Guardar nombre actual al importar
-                        await setDoc(tripRef, {
+                        const newData = {
                             name: json.name || "Viaje Importado",
                             events: json.events,
                             lastUpdated: now,
-                            lastUpdatedBy: { 
-                                uid: state.user.uid, 
-                                username: state.username || "Usuario Importador", 
-                                date: now 
+                            lastUpdatedBy: meta
+                        };
+
+                        if (state.isOffline) {
+                            // En offline, simplemente reemplazamos la memoria
+                            state.tripData = newData;
+                            state.activeTripId = 'local-import-' + Math.floor(Math.random()*1000);
+                        } else {
+                            // En online, guardamos en DB
+                            let targetId = state.activeTripId;
+                            if (!targetId) {
+                                if (els.tripInput.value.trim()) {
+                                    targetId = els.tripInput.value.trim().replace(/[^a-zA-Z0-9-_]/g, '');
+                                } else {
+                                    targetId = `importado-${Math.floor(Math.random() * 10000)}`;
+                                }
                             }
-                        }, { merge: true });
+                            const tripRef = doc(fb.db, 'artifacts', appId, 'public', 'data', 'trips', targetId);
+                            await setDoc(tripRef, newData, { merge: true });
+                            state.activeTripId = targetId;
+                        }
 
                         if (isHome) {
-                            state.activeTripId = targetId;
                             switchView('app');
                             startListening();
+                        } else {
+                            // Si importamos desde dentro de la app, forzamos render o reload
+                            if(state.isOffline) render();
                         }
-                        showToast("Itinerario importado correctamente");
+                        showToast("Itinerario cargado correctamente");
                     } else {
                         showToast("Error: JSON inválido");
                     }
@@ -718,36 +733,10 @@
 
         // --- Event Listeners ---
         
-        // Auth Init
-        (async () => {
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (err) { console.error(err); }
-        })();
-
-        onAuthStateChanged(auth, (u) => {
-            state.user = u;
-            views.loading.classList.add('hidden');
-            if (u) {
-                switchView('home');
-            }
-        });
-
-        // Home Actions
-        els.btnToggleMode.addEventListener('click', () => {
-            state.isJoinMode = !state.isJoinMode;
-            els.homeLabel.textContent = state.isJoinMode ? "Ingresa el Código del Viaje" : "Crea un nombre para el código";
-            els.btnJoinCreate.textContent = state.isJoinMode ? "Unirse al Itinerario" : "Comenzar Nuevo Itinerario";
-            els.btnToggleMode.textContent = state.isJoinMode ? "¿No tienes código? Crea uno nuevo" : "¿Ya tienes código? Únete aquí";
-            els.tripInput.focus();
-        });
-
+        // Botón en Home
+        // ELIMINADO: btnToggleMode.addEventListener... (Ya no es necesario cambiar modo en offline)
+        
         els.btnJoinCreate.addEventListener('click', () => {
-            // Validar Username
             const username = els.usernameInput.value.trim();
             if (!username) {
                 showToast("Por favor ingresa tu nombre");
@@ -757,20 +746,30 @@
             state.username = username;
 
             const val = els.tripInput.value.trim();
-            if (!val) return;
-            state.activeTripId = val.replace(/[^a-zA-Z0-9-_]/g, '');
+            // En modo offline, permitimos entrar sin ID (creará uno local)
+            // O con ID para "simular" un nombre
+            if (val) {
+                state.activeTripId = val.replace(/[^a-zA-Z0-9-_]/g, '');
+            } else {
+                state.activeTripId = null; // Creará "Nuevo Viaje Local"
+            }
+            
             switchView('app');
             startListening();
         });
 
         els.fileImportHome.addEventListener('change', (e) => handleImport(e.target.files[0], true));
 
-        // App Actions
+        // Botones App
         els.btnLogout.addEventListener('click', () => {
+            if(state.isOffline && !confirm("Estás en modo Offline. Si sales sin guardar el archivo JSON perderás los cambios. ¿Salir?")) {
+                return;
+            }
             state.activeTripId = null;
             state.tripData = { name: "Mi Viaje", events: [], lastUpdated: 0 };
-            state.username = ""; // Reset username
-            els.usernameInput.value = ""; // Clear input
+            state.username = ""; 
+            els.usernameInput.value = ""; 
+            els.tripInput.value = "";
             switchView('home');
         });
 
@@ -780,25 +779,20 @@
         });
 
         els.btnShowAddForm.addEventListener('click', () => {
-            resetForm(); // Ensure clean state
+            resetForm(); 
             els.btnShowAddForm.classList.add('hidden');
             els.addEventForm.classList.remove('hidden');
         });
 
-        els.btnCancelForm.addEventListener('click', () => {
-            resetForm();
-        });
-
-        els.btnCloseForm.addEventListener('click', () => {
-             resetForm();
-        });
+        els.btnCancelForm.addEventListener('click', () => resetForm());
+        els.btnCloseForm.addEventListener('click', () => resetForm());
 
         els.formNewEvent.addEventListener('submit', (e) => {
             e.preventDefault();
             const formData = new FormData(e.target);
             saveEvent({
                 time: formData.get('time'),
-                endTime: formData.get('endTime'), // Capture endTime
+                endTime: formData.get('endTime'), 
                 title: formData.get('title'),
                 location: formData.get('location'),
                 notes: formData.get('notes')
@@ -811,11 +805,14 @@
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.href = url;
-            link.download = `itinerario-${state.activeTripId}.json`;
+            link.download = `itinerario-${state.activeTripId || 'local'}.json`;
             link.click();
         });
 
         els.fileImportApp.addEventListener('change', (e) => handleImport(e.target.files[0], false));
+
+        // Arrancar
+        initSystem();
 
     </script>
 </body>
